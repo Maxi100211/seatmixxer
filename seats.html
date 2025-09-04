@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>SeatMixxer – Sædeplan</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .seat-grid { display: grid; gap: 12px; padding: 20px 0; background: #f8f9fa; border-radius: 10px; }
+    .seat { background: white; padding: 18px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); text-align: center; font-weight: bold; }
+    .print-btn { background: #4a90e2; color: white; padding: 10px 22px; border: none; border-radius: 5px; cursor: pointer; }
+    .actions { margin-top: 25px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">SeatMixxer</div>
+    <h2>Trin 5: Din sædeplan</h2>
+    <div class="grid-header">
+      <button onclick="window.print()" class="print-btn">🖨️ Udskriv</button>
+    </div>
+    <div id="seat-grid"></div>
+    <div class="actions">
+      <button id="remix-btn" class="mix-btn">🔀 Mix igen</button>
+      <a href="index.html" class="btn">🏠 Ny klasse</a>
+    </div>
+    <div id="msg" class="info-box"></div>
+  </div>
+  <script type="module">
+    import { auth, loadUserData, saveUserData, requireLogin } from './firebase.js';
+    requireLogin();
+
+    // ----------- Helper functions for seat mixing ----------
+    function secureShuffle(arr) {
+      let a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 2**32 * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+    function genderBalancedShuffle(students) {
+      let males = secureShuffle(students.filter(s => s.gender === "m"));
+      let females = secureShuffle(students.filter(s => s.gender === "f"));
+      let others = secureShuffle(students.filter(s => s.gender === "u"));
+      let res = [], mi = 0, fi = 0;
+      while (mi < males.length || fi < females.length) {
+        if ((mi + fi) % 2 === 0 && mi < males.length) res.push(males[mi++]);
+        else if (fi < females.length) res.push(females[fi++]);
+        else if (mi < males.length) res.push(males[mi++]);
+      }
+      // Insert others at random spots
+      others.forEach(o => res.splice(Math.floor(Math.random() * (res.length + 1)), 0, o));
+      return res;
+    }
+    function parsePos(s) {
+      const [r, c] = s.split(',').map(Number); return [r, c];
+    }
+    function getNeighbors(pos) {
+      // Up, down, left, right
+      return [
+        [pos[0]-1, pos[1]], [pos[0]+1, pos[1]],
+        [pos[0], pos[1]-1], [pos[0], pos[1]+1]
+      ];
+    }
+    function isValidSeating(seating, blacklist) {
+      const posMap = {};
+      for (let i = 0; i < seating.length; i++) posMap[seating[i].pos.join()] = seating[i].student.name.toLowerCase();
+      const forbidden = new Set(blacklist.map(pair => [pair[0].toLowerCase(), pair[1].toLowerCase()].sort().join('|')));
+      for (const {student, pos} of seating) {
+        const name = student.name.toLowerCase();
+        for (const nPos of getNeighbors(pos)) {
+          const other = posMap[nPos.join()];
+          if (other) {
+            const key = [name, other].sort().join('|');
+            if (forbidden.has(key)) return false;
+          }
+        }
+      }
+      return true;
+    }
+    // ----------- Main logic -----------
+    let students, layout, blacklist, shuffleType;
+    let lastSeating = [];
+    async function loadDataAndDraw() {
+      document.getElementById('msg').textContent = '';
+      const data = await loadUserData();
+      students = data.students || [];
+      layout = (data.layout || []).map(parsePos);
+      blacklist = data.blacklist || [];
+      shuffleType = data.shuffleType || "balanced";
+      // Mix seats with validation
+      let attempts = 0, maxAttempts = 1000, seating;
+      while (attempts++ < maxAttempts) {
+        let shuffled = shuffleType === "balanced" ? genderBalancedShuffle(students) : secureShuffle(students);
+        seating = layout.slice(0, students.length).map((pos, i) => ({ student: shuffled[i], pos }));
+        if (isValidSeating(seating, blacklist)) {
+          lastSeating = seating;
+          break;
+        }
+      }
+      if (!lastSeating.length) {
+        document.getElementById('msg').textContent = "Ingen gyldig pladstildeling fundet – prøv at fjerne nogle forbudte par eller ændre layout.";
+        document.getElementById('seat-grid').innerHTML = '';
+        return;
+      }
+      // Tegn grid
+      const maxRow = Math.max(...layout.map(pos => pos[0]));
+      const maxCol = Math.max(...layout.map(pos => pos[1]));
+      const grid = document.getElementById('seat-grid');
+      grid.className = 'seat-grid';
+      grid.style.gridTemplateRows = `repeat(${maxRow+1}, 1fr)`;
+      grid.style.gridTemplateColumns = `repeat(${maxCol+1}, 1fr)`;
+      grid.innerHTML = '';
+      // Tegn pladser med navne
+      lastSeating.forEach(({student, pos}) => {
+        const div = document.createElement('div');
+        div.className = 'seat';
+        div.style.gridRow = pos[0]+1;
+        div.style.gridColumn = pos[1]+1;
+        div.textContent = student.name;
+        grid.appendChild(div);
+      });
+    }
+    document.getElementById('remix-btn').onclick = loadDataAndDraw;
+    loadDataAndDraw();
+  </script>
+</body>
+</html>
