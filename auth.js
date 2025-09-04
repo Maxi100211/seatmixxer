@@ -1,14 +1,14 @@
-// Importer Firebase SDK v9+ (modular)
+// Importer Firebase SDK v9+ modules fra CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 
-// Din Firebase config (fra din besked)
+// Din Firebase konfiguration
 const firebaseConfig = {
   apiKey: "AIzaSyBMxiDa_hV95neKZFOndaWf-vW2OyA3I9c",
   authDomain: "seatmixxer.firebaseapp.com",
   projectId: "seatmixxer",
-  storageBucket: "seatmixxer.firebasestorage.app",
+  storageBucket: "seatmixxer.appspot.com", // KORREKT!
   messagingSenderId: "1000604838839",
   appId: "1:1000604838839:web:c36a73bcfaaf82b0365632",
   measurementId: "G-85VG44MFG8"
