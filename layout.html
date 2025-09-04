@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>SeatMixxer – Vælg pladser</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .grid-label { margin-bottom: 10px; }
+    .grid-editor { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">SeatMixxer</div>
+    <h2>Trin 3: Vælg pladser på gridden</h2>
+    <div class="grid-label">Klik for at vælge pladser (antal elever: <span id="student-count"></span>)</div>
+    <div class="grid-editor" id="grid"></div>
+    <div>Valgte pladser: <span id="selected-count">0</span></div>
+    <div class="actions">
+      <button id="save-layout-btn" class="mix-btn">Gem og fortsæt</button>
+    </div>
+    <div id="msg" class="info-box"></div>
+  </div>
+  <script type="module">
+    import { auth, loadUserData, saveUserData, requireLogin } from './firebase.js';
+    requireLogin();
+    let selected = new Set();
+    let students = [];
+    const rows = 8, cols = 8, grid = document.getElementById('grid');
+    (async function init() {
+      const data = await loadUserData();
+      students = data.students || [];
+      document.getElementById('student-count').textContent = students.length;
+      // Byg grid
+      grid.innerHTML = '';
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.style.gridRow = r + 1;
+          cell.style.gridColumn = c + 1;
+          cell.onclick = () => {
+            const key = `${r},${c}`;
+            if (selected.has(key)) {
+              selected.delete(key);
+              cell.classList.remove('active');
+            } else {
+              selected.add(key);
+              cell.classList.add('active');
+            }
+            document.getElementById('selected-count').textContent = selected.size;
+          };
+          grid.appendChild(cell);
+        }
+      }
+    })();
+    document.getElementById('save-layout-btn').onclick = async () => {
+      const msg = document.getElementById('msg');
+      msg.textContent = "";
+      if (selected.size < students.length) {
+        msg.textContent = "Du skal vælge mindst lige så mange pladser som der er elever.";
+        return;
+      }
+      await saveUserData({ layout: Array.from(selected) });
+      window.location.href = "blacklist.html";
+    };
+  </script>
+</body>
+</html>
