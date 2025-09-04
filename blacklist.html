@@ -4,13 +4,6 @@
   <meta charset="UTF-8">
   <title>SeatMixxer – Naboforbud</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .pair-entry { display: flex; gap: 10px; margin: 10px 0; align-items: center; }
-    .student-select { padding: 7px; border: 2px solid #4a90e2; border-radius: 5px; min-width: 120px; }
-    #pairs-container { margin: 10px 0; }
-    .pair-display { display: flex; gap: 10px; align-items: center; background: #f0f6ff; border-radius: 6px; padding: 7px; margin-bottom: 4px; }
-    .remove-pair { background: #ff4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
-  </style>
 </head>
 <body>
   <div class="container">
@@ -38,8 +31,15 @@
     </form>
     <div id="msg" class="info-box"></div>
   </div>
+  <style>
+    .pair-entry { display: flex; gap: 10px; margin: 10px 0; align-items: center; }
+    .student-select { padding: 7px; border: 2px solid #4a90e2; border-radius: 5px; min-width: 120px; }
+    #pairs-container { margin: 10px 0; }
+    .pair-display { display: flex; gap: 10px; align-items: center; background: #f0f6ff; border-radius: 6px; padding: 7px; margin-bottom: 4px; }
+    .remove-pair { background: #ff4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
+  </style>
   <script type="module">
-    import { loadUserData, saveUserData } from './firebase.js';
+    import { auth, loadUserData, saveUserData } from './firebase.js';
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
     let students = [], blacklist = [];
     let select1 = document.getElementById('select1');
@@ -52,7 +52,6 @@
       const data = await loadUserData();
       students = data.students || [];
       blacklist = data.blacklist || [];
-      // Fyld select-felter
       select1.innerHTML = students.map(s => `<option>${s.name}</option>`).join('');
       select2.innerHTML = students.map(s => `<option>${s.name}</option>`).join('');
       updatePairs();
