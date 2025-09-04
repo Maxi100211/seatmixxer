@@ -4,12 +4,6 @@
   <meta charset="UTF-8">
   <title>SeatMixxer – Sædeplan</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .seat-grid { display: grid; gap: 12px; padding: 20px 0; background: #f8f9fa; border-radius: 10px; }
-    .seat { background: white; padding: 18px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); text-align: center; font-weight: bold; }
-    .print-btn { background: #4a90e2; color: white; padding: 10px 22px; border: none; border-radius: 5px; cursor: pointer; }
-    .actions { margin-top: 25px; }
-  </style>
 </head>
 <body>
   <div class="container">
@@ -26,10 +20,8 @@
     <div id="msg" class="info-box"></div>
   </div>
   <script type="module">
-    import { auth, loadUserData, saveUserData, requireLogin } from './firebase.js';
-    requireLogin();
-
-    // ----------- Helper functions for seat mixing ----------
+    import { auth, loadUserData } from './firebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
     function secureShuffle(arr) {
       let a = arr.slice();
       for (let i = a.length - 1; i > 0; i--) {
@@ -48,15 +40,11 @@
         else if (fi < females.length) res.push(females[fi++]);
         else if (mi < males.length) res.push(males[mi++]);
       }
-      // Insert others at random spots
       others.forEach(o => res.splice(Math.floor(Math.random() * (res.length + 1)), 0, o));
       return res;
     }
-    function parsePos(s) {
-      const [r, c] = s.split(',').map(Number); return [r, c];
-    }
+    function parsePos(s) { const [r, c] = s.split(',').map(Number); return [r, c]; }
     function getNeighbors(pos) {
-      // Up, down, left, right
       return [
         [pos[0]-1, pos[1]], [pos[0]+1, pos[1]],
         [pos[0], pos[1]-1], [pos[0], pos[1]+1]
@@ -78,7 +66,6 @@
       }
       return true;
     }
-    // ----------- Main logic -----------
     let students, layout, blacklist, shuffleType;
     let lastSeating = [];
     async function loadDataAndDraw() {
@@ -88,7 +75,6 @@
       layout = (data.layout || []).map(parsePos);
       blacklist = data.blacklist || [];
       shuffleType = data.shuffleType || "balanced";
-      // Mix seats with validation
       let attempts = 0, maxAttempts = 1000, seating;
       while (attempts++ < maxAttempts) {
         let shuffled = shuffleType === "balanced" ? genderBalancedShuffle(students) : secureShuffle(students);
@@ -103,7 +89,6 @@
         document.getElementById('seat-grid').innerHTML = '';
         return;
       }
-      // Tegn grid
       const maxRow = Math.max(...layout.map(pos => pos[0]));
       const maxCol = Math.max(...layout.map(pos => pos[1]));
       const grid = document.getElementById('seat-grid');
@@ -111,7 +96,6 @@
       grid.style.gridTemplateRows = `repeat(${maxRow+1}, 1fr)`;
       grid.style.gridTemplateColumns = `repeat(${maxCol+1}, 1fr)`;
       grid.innerHTML = '';
-      // Tegn pladser med navne
       lastSeating.forEach(({student, pos}) => {
         const div = document.createElement('div');
         div.className = 'seat';
@@ -121,8 +105,11 @@
         grid.appendChild(div);
       });
     }
+    onAuthStateChanged(auth, user => {
+      if (!user) window.location.href = "index.html";
+      else loadDataAndDraw();
+    });
     document.getElementById('remix-btn').onclick = loadDataAndDraw;
-    loadDataAndDraw();
   </script>
 </body>
 </html>
