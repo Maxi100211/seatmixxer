@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>SeatMixxer – Vælg køn</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .gender-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 18px 0; }
+    .student-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.07); text-align: center; }
+    .gender-btn { margin: 5px; padding: 6px 20px; border: none; border-radius: 15px; cursor: pointer; }
+    .gender-btn.selected { background: #4a90e2; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">SeatMixxer</div>
+    <h2>Trin 2: Angiv køn</h2>
+    <form id="gender-form">
+      <div class="gender-grid" id="students-list"></div>
+      <div class="actions">
+        <button type="submit" class="mix-btn">Gem og fortsæt</button>
+      </div>
+    </form>
+    <div id="msg" class="info-box"></div>
+  </div>
+  <script type="module">
+    import { auth, loadUserData, saveUserData, requireLogin } from './firebase.js';
+    requireLogin();
+    let students = [];
+    const list = document.getElementById('students-list');
+    (async function init() {
+      const data = await loadUserData();
+      students = data.students || [];
+      list.innerHTML = students.map((s, i) =>
+        `<div class="student-card">
+          <div>${s.name}</div>
+          <button type="button" class="gender-btn${s.gender==='m'?' selected':''}" onclick="setGender(${i},'m')">Dreng</button>
+          <button type="button" class="gender-btn${s.gender==='f'?' selected':''}" onclick="setGender(${i},'f')">Pige</button>
+          <button type="button" class="gender-btn${s.gender==='u'?' selected':''}" onclick="setGender(${i},'u')">Ukendt</button>
+        </div>`
+      ).join('');
+      window.setGender = (idx, gender) => {
+        students[idx].gender = gender;
+        document.querySelectorAll('.student-card')[idx].querySelectorAll('.gender-btn').forEach(btn => {
+          btn.classList.toggle('selected', btn.textContent.toLowerCase().includes(
+            gender === 'm' ? 'dreng' : (gender === 'f' ? 'pige' : 'ukendt')
+          ));
+        });
+      };
+    })();
+    document.getElementById('gender-form').onsubmit = async e => {
+      e.preventDefault();
+      await saveUserData({ students });
+      window.location.href = "layout.html";
+    };
+  </script>
+</body>
+</html>
