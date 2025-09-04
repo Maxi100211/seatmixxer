@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>SeatMixxer – Naboforbud</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .pair-entry { display: flex; gap: 10px; margin: 10px 0; align-items: center; }
+    .student-select { padding: 7px; border: 2px solid #4a90e2; border-radius: 5px; min-width: 120px; }
+    #pairs-container { margin: 10px 0; }
+    .pair-display { display: flex; gap: 10px; align-items: center; background: #f0f6ff; border-radius: 6px; padding: 7px; margin-bottom: 4px; }
+    .remove-pair { background: #ff4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">SeatMixxer</div>
+    <h2>Trin 4: Vælg forbudte nabopar og mix-type</h2>
+    <form id="blacklist-form">
+      <div>
+        <label for="shuffle-type">Mix-type:</label>
+        <select id="shuffle-type">
+          <option value="balanced">Kønsbalanceret</option>
+          <option value="random">Tilfældig</option>
+        </select>
+      </div>
+      <div id="pairs-container"></div>
+      <div class="pair-entry">
+        <select class="student-select" id="select1"></select>
+        <span>og</span>
+        <select class="student-select" id="select2"></select>
+        <button type="button" id="add-pair-btn" class="mix-btn">➕ Tilføj</button>
+      </div>
+      <div class="actions">
+        <button type="submit" class="mix-btn">Generer pladser</button>
+      </div>
+    </form>
+    <div id="msg" class="info-box"></div>
+  </div>
+  <script type="module">
+    import { loadUserData, saveUserData, requireLogin } from './firebase.js';
+    requireLogin();
+    let students = [], blacklist = [];
+    (async function init() {
+      const data = await loadUserData();
+      students = data.students || [];
+      // Fyld select-felter
+      for (const id of ["select1", "select2"]) {
+        const sel = document.getElementById(id);
+        sel.innerHTML = students.map(s => `<option>${s.name}</option>`).join('');
+      }
+      updatePairs();
+    })();
+    function updatePairs() {
+      const container = document.getElementById('pairs-container');
+      container.innerHTML = '';
+      blacklist.forEach((pair, i) => {
+        const div = document.createElement('div');
+        div.className = 'pair-display';
+        div.innerHTML = `<span>${pair[0]} og ${pair[1]}</span>
+                         <button type="button" class="remove-pair" onclick="removePair(${i})">✖</button>`;
+        container.appendChild(div);
+      });
+      window.removePair = idx => {
+        blacklist.splice(idx, 1); updatePairs();
+      };
+    }
+    document.getElementById('add-pair-btn').onclick = () => {
+      const n1 = document.getElementById('select1').value;
+      const n2 = document.getElementById('select2').value;
+      if (n1 && n2 && n1 !== n2 && !blacklist.some(p => (p[0]===n1 && p[1]===n2)||(p[0]===n2 && p[1]===n1))) {
+        blacklist.push([n1, n2]);
+        updatePairs();
+      }
+    };
+    document.getElementById('blacklist-form').onsubmit = async e => {
+      e.preventDefault();
+      await saveUserData({ blacklist, shuffleType: document.getElementById('shuffle-type').value });
+      window.location.href = "seats.html";
+    };
+  </script>
+</body>
+</html>
