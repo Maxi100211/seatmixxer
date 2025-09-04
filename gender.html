@@ -19,35 +19,44 @@
       <div class="gender-grid" id="students-list"></div>
       <div class="actions">
         <button type="submit" class="mix-btn">Gem og fortsæt</button>
+        <a href="index.html" class="btn">← Tilbage</a>
       </div>
     </form>
     <div id="msg" class="info-box"></div>
   </div>
   <script type="module">
-    import { auth, loadUserData, saveUserData, requireLogin } from './firebase.js';
-    requireLogin();
+    import { auth, loadUserData, saveUserData } from './firebase.js';
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+
     let students = [];
     const list = document.getElementById('students-list');
-    (async function init() {
+    const msg = document.getElementById('msg');
+    onAuthStateChanged(auth, async user => {
+      if (!user) window.location.href = "index.html";
       const data = await loadUserData();
       students = data.students || [];
+      if (students.length === 0) window.location.href = "index.html";
+      render();
+    });
+
+    function render() {
       list.innerHTML = students.map((s, i) =>
         `<div class="student-card">
           <div>${s.name}</div>
-          <button type="button" class="gender-btn${s.gender==='m'?' selected':''}" onclick="setGender(${i},'m')">Dreng</button>
-          <button type="button" class="gender-btn${s.gender==='f'?' selected':''}" onclick="setGender(${i},'f')">Pige</button>
-          <button type="button" class="gender-btn${s.gender==='u'?' selected':''}" onclick="setGender(${i},'u')">Ukendt</button>
+          <button type="button" class="gender-btn${s.gender==='m'?' selected':''}" data-i="${i}" data-g="m">Dreng</button>
+          <button type="button" class="gender-btn${s.gender==='f'?' selected':''}" data-i="${i}" data-g="f">Pige</button>
+          <button type="button" class="gender-btn${s.gender==='u'?' selected':''}" data-i="${i}" data-g="u">Ukendt</button>
         </div>`
       ).join('');
-      window.setGender = (idx, gender) => {
-        students[idx].gender = gender;
-        document.querySelectorAll('.student-card')[idx].querySelectorAll('.gender-btn').forEach(btn => {
-          btn.classList.toggle('selected', btn.textContent.toLowerCase().includes(
-            gender === 'm' ? 'dreng' : (gender === 'f' ? 'pige' : 'ukendt')
-          ));
-        });
-      };
-    })();
+    }
+    list.onclick = e => {
+      if (e.target.classList.contains('gender-btn')) {
+        const i = +e.target.dataset.i, g = e.target.dataset.g;
+        students[i].gender = g;
+        render();
+      }
+    };
+
     document.getElementById('gender-form').onsubmit = async e => {
       e.preventDefault();
       await saveUserData({ students });
