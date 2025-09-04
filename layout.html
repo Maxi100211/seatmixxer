@@ -14,22 +14,28 @@
     <div class="logo">SeatMixxer</div>
     <h2>Trin 3: Vælg pladser på gridden</h2>
     <div class="grid-label">Klik for at vælge pladser (antal elever: <span id="student-count"></span>)</div>
-    <div class="grid-editor" id="grid"></div>
+    <div class="grid-editor" id="grid" style="grid-template-rows:repeat(20,32px); grid-template-columns:repeat(20,32px);"></div>
     <div>Valgte pladser: <span id="selected-count">0</span></div>
     <div class="actions">
       <button id="save-layout-btn" class="mix-btn">Gem og fortsæt</button>
+      <a href="gender.html" class="btn">← Tilbage</a>
     </div>
     <div id="msg" class="info-box"></div>
   </div>
   <script type="module">
-    import { auth, loadUserData, saveUserData, requireLogin } from './firebase.js';
-    requireLogin();
+    import { auth, loadUserData, saveUserData } from './firebase.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
     let selected = new Set();
     let students = [];
-    const rows = 8, cols = 8, grid = document.getElementById('grid');
-    (async function init() {
+    const rows = 20, cols = 20, grid = document.getElementById('grid');
+    const msg = document.getElementById('msg');
+    const selCount = document.getElementById('selected-count');
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) window.location.href = "index.html";
       const data = await loadUserData();
       students = data.students || [];
+      if (students.length === 0) window.location.href = "index.html";
       document.getElementById('student-count').textContent = students.length;
       // Byg grid
       grid.innerHTML = '';
@@ -48,14 +54,13 @@
               selected.add(key);
               cell.classList.add('active');
             }
-            document.getElementById('selected-count').textContent = selected.size;
+            selCount.textContent = selected.size;
           };
           grid.appendChild(cell);
         }
       }
-    })();
+    });
     document.getElementById('save-layout-btn').onclick = async () => {
-      const msg = document.getElementById('msg');
       msg.textContent = "";
       if (selected.size < students.length) {
         msg.textContent = "Du skal vælge mindst lige så mange pladser som der er elever.";
