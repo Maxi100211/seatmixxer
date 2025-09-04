@@ -2,22 +2,77 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>SeatMixxer – Indtast navne</title>
+  <title>SeatMixxer – Indtast navne & Login</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <div class="logo">SeatMixxer</div>
-    <h2>Trin 1: Indtast navne på elever</h2>
-    <textarea id="names-input" placeholder="Skriv ét navn per linje..."></textarea>
-    <div class="actions">
-      <button id="save-names-btn" class="mix-btn">Gem og fortsæt</button>
+    <div id="login-box">
+      <h2>Login</h2>
+      <input id="email" placeholder="Email" type="email" autocomplete="username">
+      <input id="pw" placeholder="Kodeord" type="password" autocomplete="current-password">
+      <button id="login-btn">Log ind</button>
+      <button id="signup-btn">Opret bruger</button>
+      <div id="login-msg" class="info-box"></div>
     </div>
-    <div id="msg" class="info-box"></div>
+    <div id="main-content" style="display:none;">
+      <h2>Trin 1: Indtast navne på elever</h2>
+      <textarea id="names-input" placeholder="Skriv ét navn per linje..."></textarea>
+      <div class="actions">
+        <button id="save-names-btn" class="mix-btn">Gem og fortsæt</button>
+        <button id="logout-btn" class="btn">Log ud</button>
+      </div>
+      <div id="msg" class="info-box"></div>
+    </div>
   </div>
   <script type="module">
-    import { auth, saveUserData, requireLogin } from './firebase.js';
-    requireLogin();
+    import { auth, saveUserData } from './firebase.js';
+    import {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+
+    const loginBox = document.getElementById('login-box');
+    const mainContent = document.getElementById('main-content');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        loginBox.style.display = "none";
+        mainContent.style.display = "block";
+      } else {
+        loginBox.style.display = "block";
+        mainContent.style.display = "none";
+      }
+    });
+
+    document.getElementById('login-btn').onclick = async () => {
+      try {
+        await signInWithEmailAndPassword(auth,
+          document.getElementById('email').value,
+          document.getElementById('pw').value
+        );
+        document.getElementById('login-msg').textContent = "";
+      } catch (e) {
+        document.getElementById('login-msg').textContent = e.message;
+      }
+    };
+    document.getElementById('signup-btn').onclick = async () => {
+      try {
+        await createUserWithEmailAndPassword(auth,
+          document.getElementById('email').value,
+          document.getElementById('pw').value
+        );
+        document.getElementById('login-msg').textContent = "";
+      } catch (e) {
+        document.getElementById('login-msg').textContent = e.message;
+      }
+    };
+    logoutBtn.onclick = () => signOut(auth);
+
     document.getElementById('save-names-btn').onclick = async () => {
       const txt = document.getElementById('names-input').value.trim();
       const msg = document.getElementById('msg');
@@ -31,7 +86,6 @@
         msg.textContent = "Indtast mindst to navne.";
         return;
       }
-      // Gem navne med ukendt køn
       await saveUserData({ students: names.map(name => ({ name, gender: "u" })) });
       window.location.href = "gender.html";
     };
