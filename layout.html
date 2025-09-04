@@ -4,17 +4,13 @@
   <meta charset="UTF-8">
   <title>SeatMixxer – Vælg pladser</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .grid-label { margin-bottom: 10px; }
-    .grid-editor { margin-bottom: 20px; }
-  </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">SeatMixxer</div>
     <h2>Trin 3: Vælg pladser på gridden</h2>
     <div class="grid-label">Klik for at vælge pladser (antal elever: <span id="student-count"></span>)</div>
-    <div class="grid-editor" id="grid" style="grid-template-rows:repeat(20,32px); grid-template-columns:repeat(20,32px);"></div>
+    <div class="grid-editor" id="grid"></div>
     <div>Valgte pladser: <span id="selected-count">0</span></div>
     <div class="actions">
       <button id="save-layout-btn" class="mix-btn">Gem og fortsæt</button>
