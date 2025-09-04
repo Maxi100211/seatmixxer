@@ -1,12 +1,38 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
-    <meta charset="UTF-8">
-    <title>SeatMixxer (Frontend)</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>SeatMixxer – Login og Gem Klasse (moderne Firebase)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app"></div>
-    <script src="script.js"></script>
+  <div class="container">
+    <div class="logo">SeatMixxer</div>
+    <div id="auth-section">
+      <h2>Log ind eller opret bruger</h2>
+      <input type="email" id="email" placeholder="E-mail">
+      <input type="password" id="password" placeholder="Kodeord">
+      <div class="actions">
+        <button id="login-btn">Log ind</button>
+        <button id="signup-btn">Opret bruger</button>
+      </div>
+      <div id="auth-msg" class="error"></div>
+    </div>
+    <div id="app-section" style="display:none;">
+      <div class="grid-header">
+        <div id="user-email"></div>
+        <button class="btn" id="logout-btn">Log ud</button>
+      </div>
+      <h3>Gem eller hent din klasse</h3>
+      <textarea id="class-data" rows="8" placeholder="Indtast din klasseliste eller sædeplan her..."></textarea>
+      <div class="actions">
+        <button class="mix-btn" id="save-btn">Gem klasse</button>
+        <button class="btn" id="load-btn">Hent klasse</button>
+      </div>
+      <div id="class-msg" class="info-box"></div>
+    </div>
+  </div>
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
