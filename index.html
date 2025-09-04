@@ -2,37 +2,39 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>SeatMixxer – Login og Gem Klasse</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SeatMixxer – Indtast navne</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <div class="logo">SeatMixxer</div>
-    <div id="auth-section">
-      <h2>Log ind eller opret bruger</h2>
-      <input type="email" id="email" placeholder="E-mail">
-      <input type="password" id="password" placeholder="Kodeord">
-      <div class="actions">
-        <button id="login-btn">Log ind</button>
-        <button id="signup-btn">Opret bruger</button>
-      </div>
-      <div id="auth-msg" class="error"></div>
+    <h2>Trin 1: Indtast navne på elever</h2>
+    <textarea id="names-input" placeholder="Skriv ét navn per linje..."></textarea>
+    <div class="actions">
+      <button id="save-names-btn" class="mix-btn">Gem og fortsæt</button>
     </div>
-    <div id="app-section" style="display:none;">
-      <div class="grid-header">
-        <div id="user-email"></div>
-        <button class="btn" id="logout-btn">Log ud</button>
-      </div>
-      <h3>Gem eller hent din klasse</h3>
-      <textarea id="class-data" rows="8" placeholder="Indtast din klasseliste eller sædeplan her..."></textarea>
-      <div class="actions">
-        <button class="mix-btn" id="save-btn">Gem klasse</button>
-        <button class="btn" id="load-btn">Hent klasse</button>
-      </div>
-      <div id="class-msg" class="info-box"></div>
-    </div>
+    <div id="msg" class="info-box"></div>
   </div>
-  <script type="module" src="auth.js"></script>
+  <script type="module">
+    import { auth, saveUserData, requireLogin } from './firebase.js';
+    requireLogin();
+    document.getElementById('save-names-btn').onclick = async () => {
+      const txt = document.getElementById('names-input').value.trim();
+      const msg = document.getElementById('msg');
+      msg.textContent = '';
+      if (!txt) {
+        msg.textContent = "Indtast mindst to navne.";
+        return;
+      }
+      const names = txt.split('\n').map(x => x.trim()).filter(Boolean);
+      if (names.length < 2) {
+        msg.textContent = "Indtast mindst to navne.";
+        return;
+      }
+      // Gem navne med ukendt køn
+      await saveUserData({ students: names.map(name => ({ name, gender: "u" })) });
+      window.location.href = "gender.html";
+    };
+  </script>
 </body>
 </html>
